@@ -33,26 +33,6 @@ It's easy to do with Docker.  Please use the following steps:
 
     dig @0.0.0.0 -p 8600 node1.node.consul
 
-## Insert & watch for changes to \`foo\`
-
-    curl -s -X PUT -d 'foo' http://0.0.0.0:8500/v1/kv/foo
-
-### Fetch the current Index
-
-    INDEX=$(curl -s -X GET http://0.0.0.0:8500/v1/kv/foo?wait=3s|jq -r '.[]|.ModifyIndex')
-
-### And \`watch\` until the value has changed
-
-    curl -s -X GET http://0.0.0.0:8500/v1/kv/foo?index=$INDEX|jq -S .
-
-### Use the \`consul watch\` interface
-
-    consul watch -type=key -key=foo cat
-
-## Running Commands on Nodes
-
-    consul exec --service=consul uptime
-
 # Setting up a Github Webhook
 
 First we start \`ngrok\` to proxy HTTP requests from the Internet to
