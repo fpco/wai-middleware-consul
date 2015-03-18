@@ -26,6 +26,7 @@ library
                      , base-prelude
                      , bytestring
                      , consul-haskell
+                     , enclosed-exceptions
                      , http-client
                      , http-types
                      , network

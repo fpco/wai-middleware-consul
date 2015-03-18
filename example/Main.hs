@@ -11,7 +11,7 @@ import Network.Wai.Middleware.RequestLogger ( logStdoutDev )
 import Network.Wai.Application.Static
     ( staticApp, defaultWebAppSettings )
 
-main :: forall a. IO (Either a ())
+main :: IO (Either () ())
 main =
   withConsul
     gitHubPullOnWebhook

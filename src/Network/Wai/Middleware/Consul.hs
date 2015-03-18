@@ -51,7 +51,8 @@ module Network.Wai.Middleware.Consul
        where
 
 import BasePrelude
-import Control.Concurrent.Async ( race, withAsync, waitCatch )
+import Control.Concurrent.Async ( race )
+import Control.Exception.Enclosed ( catchAny )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import qualified Data.Text as T ( Text, pack )
 import Network.Consul
@@ -82,8 +83,8 @@ data ConsulSettings =
 -- updates) & mkConsulProxy (proxys data from the internet to Consul)
 -- into one common-use function. This will probably be the function
 -- you want.  See the example/ application for more insight.
-withConsul :: forall a b.
-              ConsulSettings -> (Middleware -> IO b) -> IO (Either a b)
+withConsul :: forall b.
+              ConsulSettings -> (Middleware -> IO b) -> IO (Either () b)
 withConsul cs f =
   race (mkConsulWatch cs)
        (mkConsulProxy cs >>= f)
@@ -99,7 +100,7 @@ withConsul cs f =
 -- problem with the request/response cycle or an exception in the
 -- supplied callback function, we just re-make the rquest & wait
 -- patiently for changes again.
-mkConsulWatch :: forall b. ConsulSettings -> IO b
+mkConsulWatch :: ConsulSettings -> IO ()
 mkConsulWatch cs =
   do cc <-
        initializeConsulClient
@@ -109,30 +110,27 @@ mkConsulWatch cs =
           defaultManagerSettings {managerResponseTimeout = Nothing})
      go cc 0
   where go cc idx' =
-          withAsync (getKey cc
-                            (csKey cs <> "?index=" <>
-                             T.pack (show idx'))
-                            Nothing
-                            Nothing)
-                    (\a ->
-                       do kv <- waitCatch a
-                          case kv of
-                            Left e ->
-                              do print ("CONSUL: " <> show e)
-                                 -- TODO exponential backoff
-                                 threadDelay $ 1000 * 1000
-                                 go cc idx'
-                            Right Nothing ->
-                              do putStrLn "CONSUL: no data"
-                                 threadDelay $ 1000 * 1000
-                                 go cc idx'
-                            Right (Just kv') ->
-                              do putStrLn ("CONSUL: update #" <>
-                                           show (kvModifyIndex kv') <>
-                                           ")")
-                                 (csCallback cs $ kv') `catch`
-                                   (\e -> hPutStr stderr ("CONSUL: " <> show (e :: IOException)))
-                                 go cc (kvModifyIndex kv'))
+          catchAny (do kv <-
+                         getKey cc
+                                (csKey cs <> "?index=" <>
+                                 T.pack (show idx'))
+                                Nothing
+                                Nothing
+                       case kv of
+                         Nothing ->
+                           do putStrLn "CONSUL: no data"
+                              threadDelay $ 1000 * 1000
+                              go cc idx'
+                         (Just kv') ->
+                           do putStrLn ("CONSUL: update #" <>
+                                        show (kvModifyIndex kv') <>
+                                        ")")
+                              (csCallback cs) kv'
+                              go cc (kvModifyIndex kv'))
+                   (\e ->
+                      hPutStr stderr
+                              ("CONSUL: " <>
+                               show (e :: SomeException)))
 
 -- | Create WAI middleware that can be used to proxy incoming data
 -- into Consul (one-way). This function initiates our consul client
