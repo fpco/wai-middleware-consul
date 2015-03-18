@@ -9,20 +9,23 @@ module Network.Wai.Middleware.Consul
         mkConsulProxy)
        where
 
-import           BasePrelude
-import           Control.Concurrent.Async (withAsync, waitCatch)
-import qualified Data.ByteString.Lazy as LB
-import qualified Data.Text as T
-import           Network.Consul (KeyValue(..),
-                                 KeyValuePut(..),
-                                 getKey,
-                                 initializeConsulClient,
-                                 putKey)
-import           Network.HTTP.Client (defaultManagerSettings, managerResponseTimeout)
-import           Network.HTTP.Types (status201)
-import           Network.Socket (PortNumber)
-import           Network.Wai (Middleware, Request, responseLBS, strictRequestBody)
-import           System.IO (hPutStr, stderr)
+import BasePrelude
+import Control.Concurrent.Async ( withAsync, waitCatch )
+import qualified Data.ByteString.Lazy as LB ( toStrict )
+import qualified Data.Text as T ( Text, pack )
+import Network.Consul
+    ( KeyValue(..),
+      KeyValuePut(..),
+      getKey,
+      initializeConsulClient,
+      putKey )
+import Network.HTTP.Client
+    ( defaultManagerSettings, managerResponseTimeout )
+import Network.HTTP.Types ( status201 )
+import Network.Socket ( PortNumber )
+import Network.Wai
+    ( Middleware, Request, responseLBS, strictRequestBody )
+import System.IO ( hPutStr, stderr )
 
 -- | Consul Settings for watching & proxying Consul data
 data ConsulSettings =

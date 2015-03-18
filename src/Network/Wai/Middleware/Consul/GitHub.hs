@@ -7,13 +7,14 @@ module Network.Wai.Middleware.Consul.GitHub
        (gitHubPullOnWebhook)
        where
 
-import           BasePrelude
-import qualified Data.ByteString as B
-import           Network.HTTP.Types
-import           Network.Socket
-import           Network.Wai
-import           Network.Wai.Middleware.Consul (ConsulSettings(..))
-import           System.Process
+import BasePrelude
+import qualified Data.ByteString as B ( isPrefixOf )
+import Network.HTTP.Types ( methodPost, hUserAgent )
+import Network.Socket ( PortNumber(PortNum) )
+import Network.Wai
+    ( Request(pathInfo, requestHeaders, requestMethod) )
+import Network.Wai.Middleware.Consul ( ConsulSettings(..) )
+import System.Process ( callProcess )
 
 gitHubPullOnWebhook :: ConsulSettings
 gitHubPullOnWebhook =

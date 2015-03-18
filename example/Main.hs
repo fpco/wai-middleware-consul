@@ -4,27 +4,39 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-import           BasePrelude
-import           Control.Concurrent.Async (race_)
-import           Data.Text (Text)
-import qualified Data.Text as T
-import           Distribution.PackageDescription
-import           Distribution.PackageDescription.Parse
-import           Distribution.PackageDescription.TH
-import           Distribution.Verbosity
-import           Git.Embed
-import           Network.HTTP.Types
-import           Network.Wai
-import           Network.Wai.Handler.Warp (run)
-import           Network.Wai.Middleware.Consul (mkConsulProxy, mkConsulWatch)
-import           Network.Wai.Middleware.Consul.GitHub (gitHubPullOnWebhook)
-import           Network.Wai.Middleware.RequestLogger
-import           System.Process
-import           System.Posix
-import           Text.Blaze (ToMarkup)
-import           Text.Blaze.Html (Markup)
-import           Text.Blaze.Html.Renderer.Utf8 (renderHtml)
-import           Text.Hamlet (hamlet)
+import BasePrelude
+    ( ($),
+      Monad(return),
+      Show(show),
+      IO,
+      Category((.)),
+      showVersion,
+      (=<<) )
+import Control.Concurrent.Async ( race_ )
+import Data.Text ( Text )
+import qualified Data.Text as T ( empty, pack )
+import Distribution.PackageDescription
+    ( PackageDescription(package),
+      GenericPackageDescription(packageDescription) )
+import Distribution.PackageDescription.Parse
+    ( readPackageDescription )
+import Distribution.PackageDescription.TH
+    ( PackageIdentifier(pkgVersion), packageVariable )
+import Distribution.Verbosity ( silent )
+import Git.Embed ( embedGitShortRevision )
+import Network.HTTP.Types ( status200, hContentType )
+import Network.Wai ( Application, responseLBS )
+import Network.Wai.Handler.Warp ( run )
+import Network.Wai.Middleware.Consul
+    ( mkConsulProxy, mkConsulWatch )
+import Network.Wai.Middleware.Consul.GitHub ( gitHubPullOnWebhook )
+import Network.Wai.Middleware.RequestLogger ( logStdoutDev )
+import System.Posix ( getProcessID )
+import System.Process ( readProcess )
+import Text.Blaze ( ToMarkup )
+import Text.Blaze.Html ( Markup )
+import Text.Blaze.Html.Renderer.Utf8 ( renderHtml )
+import Text.Hamlet ( hamlet )
 
 main :: IO ()
 main =
