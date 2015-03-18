@@ -45,7 +45,7 @@ example app can find/read cabal & Github version status.
 
     ./.cabal-sandbox/bin/wai-middleware-consul-example
 
-Try navigating to the example app dashboard page.  <http://0.0.0.0:8080>
+Try navigating to the example app page. <http://0.0.0.0:8080>
 
 Run ngrok to expose the example application to the Internet:
 

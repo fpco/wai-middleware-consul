@@ -38,24 +38,10 @@ executable wai-middleware-consul-example
   hs-source-dirs:      example
   main-is:             Main.hs
   build-depends:       base >=4.7
-                     , Cabal
                      , async
                      , base-prelude
-                     , blaze-html
-                     , blaze-markup
-                     , bytestring
-                     , cabal-file-th
-                     , conduit
-                     , consul-haskell
-                     , git-embed
-                     , http-client
-                     , http-types
-                     , network
-                     , process
-                     , shakespeare
-                     , text
-                     , unix
                      , wai
+                     , wai-app-static
                      , wai-extra
                      , wai-middleware-consul
                      , warp
