@@ -118,13 +118,12 @@ mkConsulWatch cs =
                                 Nothing
                        case kv of
                          Nothing ->
-                           do putStrLn "CONSUL: no data"
+                           do putStrLn "CONSUL: no data yet"
                               threadDelay $ 1000 * 1000
                               go cc idx'
                          (Just kv') ->
                            do putStrLn ("CONSUL: update #" <>
-                                        show (kvModifyIndex kv') <>
-                                        ")")
+                                        show (kvModifyIndex kv'))
                               (csCallback cs) kv'
                               go cc (kvModifyIndex kv'))
                    (\e ->
