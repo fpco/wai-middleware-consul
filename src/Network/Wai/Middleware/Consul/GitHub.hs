@@ -48,8 +48,9 @@ isGitHubWebhook req =
    []) &&
   -- "Also, the User-Agent for the requests will have the prefix
   -- GitHub-Hookshot/"
-  (all (B.isPrefixOf "GitHub-Hookshot/")
-       (lookup' hUserAgent $ requestHeaders req))
+  case lookup' hUserAgent (requestHeaders req) of
+    [agent] -> "GitHub-Hookshot/" `B.isPrefixOf` agent
+    _ -> False
   where lookup' a =
           map snd .
           filter (\x -> a == fst x)
