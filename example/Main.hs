@@ -63,7 +63,7 @@ $doctype 5
       <div class="header">
         <nav>
           <ul class="nav nav-pills pull-right">
-            <li role="presentation"><a href="https://github.com/fpco/wai-middleware-consul">Github</a>
+            <li role="presentation"><a href="https://github.com/fpco/wai-middleware-consul">GitHub</a>
             <li role="presentation"><a href="https://hackage.haskell.org/package/wai-middleware-consul">Hackage</a>
         <h3 class="text-muted">FPComplete
       <div class="jumbotron">
