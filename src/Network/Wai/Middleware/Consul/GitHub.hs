@@ -3,6 +3,50 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-|
+Module      : Network.Wai.Middleware.Consul
+Description : WAI Middleware for Consul
+Copyright   : (c) FPComplete, 2015
+License     : MIT
+Maintainer  : Tim Dysinger <tim@fpcomplete.com>
+Stability   : experimental
+Portability : POSIX
+
+This module contains specific configuration for using WAI Middleware
+for Consul with Github. We can configure a GitHub Webhook to POST to
+consul middleware.  Consul middleware will push the GitHub webhook
+payload to Consul. Consul will let every WAI application know of the
+data update & each application will execute `git pull` to update their
+git repository contents.
+
+@
+      ┌─────────┐      ┌─────────┐
+      │ Github  │      │         │
+      │  Repo   │─────▶│ AWS ELB │
+      │ Webhook │      │         │
+      └─────────┘      └─────────┘
+                            │
+        ┌────────────┬──────┘─ ─ ─
+        │                         │
+        ▼            ▼            ▼
+   ┌─────────┐  ┌─────────┐  ┌─────────┐
+   │         │  │         │  │         │
+┌──│ WAI App │  │ WAI App │  │ WAI App │
+│  │         │  │         │  │         │
+│  └─────────┘  └─────────┘  └─────────┘
+│                    ▲            ▲
+│                    │            │
+│       ┌────────────┴────────────┘
+│       │
+│       │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│  │         │  │         │  │         │
+└─▶│ Consul  │──│ Consul  │──│ Consul  │
+   │         │  │         │  │         │
+   └─────────┘  └─────────┘  └─────────┘
+@
+-}
+
 module Network.Wai.Middleware.Consul.GitHub
        (gitHubPullOnWebhook)
        where
@@ -16,6 +60,8 @@ import Network.Wai
 import Network.Wai.Middleware.Consul ( ConsulSettings(..) )
 import System.Process ( callProcess )
 
+-- | GitHub Webhook handler with Consul callback that does a `git pull`
+-- when fired.
 gitHubPullOnWebhook :: ConsulSettings
 gitHubPullOnWebhook =
   ConsulSettings {csHost = "0.0.0.0"

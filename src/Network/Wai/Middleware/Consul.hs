@@ -3,6 +3,46 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-|
+Module      : Network.Wai.Middleware.Consul
+Description : WAI Middleware for Consul
+Copyright   : (c) FPComplete, 2015
+License     : MIT
+Maintainer  : Tim Dysinger <tim@fpcomplete.com>
+Stability   : experimental
+Portability : POSIX
+
+This module helps you proxy information to Consul from the internet &
+also react to changes to K/V data coming from Consul.
+
+@
+      ┌─────────┐      ┌─────────┐
+      │ Github  │      │         │
+      │  Repo   │─────▶│ AWS ELB │
+      │ Webhook │      │         │
+      └─────────┘      └─────────┘
+                            │
+        ┌────────────┬──────┘─ ─ ─
+        │                         │
+        ▼            ▼            ▼
+   ┌─────────┐  ┌─────────┐  ┌─────────┐
+   │         │  │         │  │         │
+┌──│ WAI App │  │ WAI App │  │ WAI App │
+│  │         │  │         │  │         │
+│  └─────────┘  └─────────┘  └─────────┘
+│                    ▲            ▲
+│                    │            │
+│       ┌────────────┴────────────┘
+│       │
+│       │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│  │         │  │         │  │         │
+└─▶│ Consul  │──│ Consul  │──│ Consul  │
+   │         │  │         │  │         │
+   └─────────┘  └─────────┘  └─────────┘
+@
+-}
+
 module Network.Wai.Middleware.Consul
        (ConsulSettings(..),
         mkConsulWatch,
