@@ -6,7 +6,6 @@
 
 import           BasePrelude
 import           Control.Concurrent.Async (race_)
-import qualified Data.ByteString as B
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Distribution.PackageDescription
@@ -14,12 +13,10 @@ import           Distribution.PackageDescription.Parse
 import           Distribution.PackageDescription.TH
 import           Distribution.Verbosity
 import           Git.Embed
-import           Network.Consul (KeyValue(..))
 import           Network.HTTP.Types
-import           Network.Socket
 import           Network.Wai
 import           Network.Wai.Handler.Warp (run)
-import           Network.Wai.Middleware.Consul (ConsulSettings(..), mkConsulProxy, mkConsulWatch)
+import           Network.Wai.Middleware.Consul (mkConsulProxy, mkConsulWatch)
 import           Network.Wai.Middleware.Consul.GitHub (gitHubPullOnWebhook)
 import           Network.Wai.Middleware.RequestLogger
 import           System.Process
