@@ -45,12 +45,13 @@ also react to changes to K/V data coming from Consul.
 
 module Network.Wai.Middleware.Consul
        (ConsulSettings(..),
+        withConsul,
         mkConsulWatch,
         mkConsulProxy)
        where
 
 import BasePrelude
-import Control.Concurrent.Async ( withAsync, waitCatch )
+import Control.Concurrent.Async ( race, withAsync, waitCatch )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import qualified Data.Text as T ( Text, pack )
 import Network.Consul
@@ -76,18 +77,29 @@ data ConsulSettings =
                  ,csCallback :: KeyValue -> IO () -- ^ Callback when data changes
                  }
 
--- | Creates a background process to receive notifications
--- of data changes from Consul.  This is accopmlished via a blocking
--- HTTP request. (The HTTP client manager used has been configured to
--- wait forever for a response.)  The ConsulSettings (csHost, csPort &
--- csKey) are used to connect to Consul and watch for key-value
--- changes.  When Consul's value changes, it will respond to the HTTP
--- request.  Upon receiving a good changed-value response, we fire the
--- csCallback function to allow for a reaction to the data change.  If
--- there there is a problem with the request/response cycle or an
--- exception in the supplied callback function, we just re-make the
--- rquest & wait patiently for changes again.
-mkConsulWatch :: forall a. ConsulSettings -> IO a
+-- | Creates a complete Consul middleware for the cluster.
+-- Combines mkConsulWatch async function (watches Consul data for
+-- updates) & mkConsulProxy (proxys data from the internet to Consul)
+-- into one common-use function. This will probably be the function
+-- you want.  See the example/ application for more insight.
+withConsul :: forall a b.
+              ConsulSettings -> (Middleware -> IO b) -> IO (Either a b)
+withConsul cs f =
+  race (mkConsulWatch cs)
+       (mkConsulProxy cs >>= f)
+
+-- | Creates a background process to receive notifications.
+-- Notifications happen via blocking HTTP request. (The HTTP client
+-- manager used has been configured to wait forever for a response.)
+-- The ConsulSettings (csHost, csPort & csKey) are used to connect to
+-- Consul and watch for key-value changes.  When Consul's value
+-- changes, it will respond to the HTTP request.  Upon receiving a
+-- good changed-value response, we fire the csCallback function to
+-- allow for a reaction to the data change.  If there there is a
+-- problem with the request/response cycle or an exception in the
+-- supplied callback function, we just re-make the rquest & wait
+-- patiently for changes again.
+mkConsulWatch :: forall b. ConsulSettings -> IO b
 mkConsulWatch cs =
   do cc <-
        initializeConsulClient
