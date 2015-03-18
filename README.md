@@ -1,8 +1,33 @@
 This library assists you in monitoring Consul k/v data & with proxying
 data to Consul safely from the Internet.  The first use case is
 receiving Github 'push' notifications when a repository is updated and
-doing a git pull on all webservers to update content.  The [example](./example) app
-shows this working.
+doing a git pull on all webservers to update content.  The
+[example](./example) app shows GitHub Webhooks working.
+
+          ┌─────────┐      ┌─────────┐
+          │ Github  │      │         │
+          │  Repo   │─────▶│ AWS ELB │
+          │ Webhook │      │         │
+          └─────────┘      └─────────┘
+                                │
+            ┌────────────┬──────┘─ ─ ─
+            │                         │
+            ▼            ▼            ▼
+       ┌─────────┐  ┌─────────┐  ┌─────────┐
+       │         │  │         │  │         │
+    ┌──│ WAI App │  │ WAI App │  │ WAI App │
+    │  │         │  │         │  │         │
+    │  └─────────┘  └─────────┘  └─────────┘
+    │                    ▲            ▲
+    │                    │            │
+    │       ┌────────────┴────────────┘
+    │       │
+    │       │
+    │  ┌─────────┐  ┌─────────┐  ┌─────────┐
+    │  │         │  │         │  │         │
+    └─▶│ Consul  │──│ Consul  │──│ Consul  │
+       │         │  │         │  │         │
+       └─────────┘  └─────────┘  └─────────┘
 
 You'll need to launch a small Consul cluster to try the example app.
 It's easy to do with Docker.  Please use the following steps:
