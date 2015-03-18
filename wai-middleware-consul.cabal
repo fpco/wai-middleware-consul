@@ -4,7 +4,7 @@ homepage:            https://github.com/fpco/wai-middleware-consul
 synopsis:            Wai Middleware for Consul
 description:         Proxies data to/from Consul. Watches for updates.
 category:            Network
-license:             Apache-2.0
+license:             MIT
 license-file:        LICENSE
 author:              Tim Dysinger
 maintainer:          tim@dysinger.net
