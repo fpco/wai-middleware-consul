@@ -5,13 +5,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 import BasePrelude
-    ( ($),
-      Monad(return),
-      Show(show),
-      IO,
-      Category((.)),
-      showVersion,
-      (=<<) )
 import Control.Concurrent.Async ( race_ )
 import Data.Text ( Text )
 import qualified Data.Text as T ( empty, pack )
