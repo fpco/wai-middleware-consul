@@ -20,6 +20,7 @@ import           Network.Socket
 import           Network.Wai
 import           Network.Wai.Handler.Warp (run)
 import           Network.Wai.Middleware.Consul (ConsulSettings(..), mkConsulProxy, mkConsulWatch)
+import           Network.Wai.Middleware.Consul.GitHub (gitHubPullOnWebhook)
 import           Network.Wai.Middleware.RequestLogger
 import           System.Process
 import           System.Posix
@@ -96,42 +97,3 @@ onDiskCabalVer :: IO Text
 onDiskCabalVer =
   return . T.pack . showVersion . pkgVersion . package . packageDescription =<<
   readPackageDescription silent "wai-middleware-consul.cabal"
-
-gitHubPullOnWebhook :: ConsulSettings
-gitHubPullOnWebhook =
-  ConsulSettings {csHost = "0.0.0.0"
-                 ,csPort = PortNum 8500
-                 ,csKey = "github"
-                 ,csFilter = isGithubWebhook
-                 ,csCallback = githubPull }
-
-githubPull :: KeyValue -> IO ()
-githubPull _ = callProcess "git" ["pull"]
-
-isGithubWebhook :: Request -> Bool
-isGithubWebhook req =
-  (requestMethod req == methodPost) &&
-  -- https://developer.github.com/webhooks/#delivery-headers "When
-  -- one of those events is triggered, we’ll send a HTTP POST
-  -- payload to the webhook’s configured URL."
-  (pathInfo req ==
-   ["github"]) &&
-  -- "X-Github-Event: Name of the event that triggered this
-  -- delivery."
-  (lookup' "X-Github-Event" (requestHeaders req) ==
-   ["push"]) &&
-  -- "X-Hub-Signature: HMAC hex digest of the payload, using the
-  -- hook’s secret as the key (if configured)."
-  (lookup' "X-Hub-Signature" (requestHeaders req) /=
-   []) && -- FIXME: Validate HMAC
-  -- "X-Github-Delivery: Unique ID for this delivery."
-  (lookup' "X-Github-Delivery" (requestHeaders req) /=
-   []) &&
-  -- "Also, the User-Agent for the requests will have the prefix
-  -- GitHub-Hookshot/"
-  (all (B.isPrefixOf "GitHub-Hookshot/")
-       (lookup' hUserAgent $ requestHeaders req))
-
--- Stolen from Yesod.Core
-lookup' :: Eq a => a -> [(a, b)] -> [b]
-lookup' a = map snd . filter (\x -> a == fst x)
