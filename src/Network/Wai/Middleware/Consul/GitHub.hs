@@ -22,7 +22,10 @@ gitHubPullOnWebhook =
                  ,csPort = PortNum 8500
                  ,csKey = "github"
                  ,csFilter = isGitHubWebhook
-                 ,csCallback = \_ -> callProcess "git" ["pull"] }
+                 ,csCallback =
+                    \_ ->
+                      callProcess "git"
+                                  ["pull"]}
 
 isGitHubWebhook :: Request -> Bool
 isGitHubWebhook req =
@@ -47,6 +50,6 @@ isGitHubWebhook req =
   -- GitHub-Hookshot/"
   (all (B.isPrefixOf "GitHub-Hookshot/")
        (lookup' hUserAgent $ requestHeaders req))
-  where
-    -- Stolen from Yesod.Core
-    lookup' a = map snd . filter (\x -> a == fst x)
+  where lookup' a =
+          map snd .
+          filter (\x -> a == fst x)
