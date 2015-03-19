@@ -31,11 +31,13 @@ library
                      , enclosed-exceptions
                      , http-client
                      , http-types
+                     , logging
                      , network
                      , process
                      , resourcet
-                     , transformers
                      , text
+                     , transformers
+                     , void
                      , wai
                      , wai-conduit
 
@@ -46,8 +48,10 @@ executable wai-middleware-consul-example
   build-depends:       base >=4.7
                      , async
                      , base-prelude
+                     , logging
                      , wai
                      , wai-app-static
                      , wai-extra
+                     , wai-logger
                      , wai-middleware-consul
                      , warp

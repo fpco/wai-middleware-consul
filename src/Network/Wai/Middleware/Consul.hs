@@ -2,6 +2,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 {-|
 Module      : Network.Wai.Middleware.Consul
@@ -50,28 +51,28 @@ module Network.Wai.Middleware.Consul
         mkConsulProxy)
        where
 
-import BasePrelude
-import Control.Concurrent.Async ( race )
+import BasePrelude hiding ( log )
+import Control.Concurrent.Async ( race_ )
 import Control.Exception.Enclosed ( catchAny )
-import Control.Monad.IO.Class ( liftIO )
+import Control.Monad.IO.Class ( MonadIO(..), liftIO )
+import Control.Logging ( log )
 import Control.Monad.Trans.Resource ( runResourceT )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import Data.Conduit ( ($$) )
 import qualified Data.Conduit.Binary as C ( take )
 import qualified Data.Text as T ( Text, pack )
 import Network.Consul
-    ( KeyValue(..),
-      KeyValuePut(..),
-      getKey,
+    ( KeyValue(kvModifyIndex),
+      KeyValuePut(KeyValuePut, kvpCasIndex, kvpFlags, kvpKey, kvpValue),
+      putKey,
       initializeConsulClient,
-      putKey )
+      getKey )
 import Network.HTTP.Client
     ( defaultManagerSettings, managerResponseTimeout )
 import Network.HTTP.Types ( status201 )
 import Network.Socket ( PortNumber )
-import Network.Wai ( Middleware, Request, responseLBS )
+import Network.Wai ( Middleware, Request, responseBuilder )
 import Network.Wai.Conduit ( sourceRequestBody )
-import System.IO ( hPutStr, stderr )
 
 -- | Consul Settings for watching & proxying Consul data
 data ConsulSettings =
@@ -89,10 +90,10 @@ data ConsulSettings =
 -- into one common-use function. This will probably be the function
 -- you want.  See the example/ application for more insight.
 withConsul :: forall b.
-              ConsulSettings -> (Middleware -> IO b) -> IO (Either () b)
+              ConsulSettings -> (Middleware -> IO b) -> IO ()
 withConsul cs f =
-  race (mkConsulWatch cs)
-       (mkConsulProxy cs >>= f)
+  race_ (mkConsulWatch cs)
+        (mkConsulProxy cs >>= f)
 
 -- | Creates a background process to receive notifications.
 -- Notifications happen via blocking HTTP request. (The HTTP client
@@ -123,18 +124,13 @@ mkConsulWatch cs =
                                 Nothing
                        case kv of
                          Nothing ->
-                           do putStrLn "CONSUL: no data yet"
-                              threadDelay $ 1000 * 1000
+                           do threadDelay $ 1000 * 1000
                               go cc idx'
                          (Just kv') ->
-                           do putStrLn ("CONSUL: update #" <>
-                                        show (kvModifyIndex kv'))
-                              (csCallback cs) kv'
+                           do (csCallback cs) kv'
                               go cc (kvModifyIndex kv'))
-                   (\e ->
-                      hPutStr stderr
-                              ("CONSUL: " <>
-                               show (e :: SomeException)))
+                   (\ex ->
+                      (log $ T.pack $ show ex))
 
 -- | Create WAI middleware that can be used to proxy incoming data
 -- into Consul (one-way). This function initiates our consul client

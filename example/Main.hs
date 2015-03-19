@@ -3,21 +3,22 @@
 {-# LANGUAGE RankNTypes #-}
 
 import BasePrelude
-import Network.Wai.Handler.Warp ( run )
-import Network.Wai.Middleware.Consul
-    ( withConsul )
-import Network.Wai.Middleware.Consul.GitHub ( gitHubPullOnWebhook )
-import Network.Wai.Middleware.RequestLogger ( logStdoutDev )
+import Control.Logging ( withStdoutLogging )
 import Network.Wai.Application.Static
     ( staticApp, defaultWebAppSettings )
+import Network.Wai.Handler.Warp ( run )
+import Network.Wai.Middleware.Consul ( withConsul )
+import Network.Wai.Middleware.Consul.GitHub ( gitHubPullOnWebhook )
+import Network.Wai.Middleware.RequestLogger ( logStdoutDev )
 
-main :: IO (Either () ())
+main :: IO ()
 main =
-  withConsul
-    gitHubPullOnWebhook
-    (\middleware ->
-       run 8080
-           (logStdoutDev $
-            middleware $
-            staticApp $
-            defaultWebAppSettings "."))
+  withStdoutLogging
+    (withConsul
+       gitHubPullOnWebhook
+       (\middleware ->
+          run 8080
+              (logStdoutDev $
+               middleware $
+               staticApp $
+               defaultWebAppSettings ".")))
