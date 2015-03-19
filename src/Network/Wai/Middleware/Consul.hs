@@ -1,6 +1,10 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -51,11 +55,13 @@ module Network.Wai.Middleware.Consul
         mkConsulProxy)
        where
 
-import BasePrelude hiding ( log )
-import Control.Concurrent.Async ( race_ )
+import BasePrelude
+import Control.Concurrent.Async ( race )
 import Control.Exception.Enclosed ( catchAny )
 import Control.Monad.IO.Class ( MonadIO(..), liftIO )
-import Control.Logging ( log )
+import Control.Monad.Logger ( MonadLoggerIO, logWarn )
+import Control.Monad.Trans.Control
+    ( MonadBaseControl(liftBaseWith, restoreM) )
 import Control.Monad.Trans.Resource ( runResourceT )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import Data.Conduit ( ($$) )
@@ -76,12 +82,18 @@ import Network.Wai.Conduit ( sourceRequestBody )
 
 -- | Consul Settings for watching & proxying Consul data
 data ConsulSettings =
-  ConsulSettings {csHost :: T.Text                -- ^ Consul host address
-                 ,csPort :: PortNumber            -- ^ Consul host port
-                 ,csKey :: T.Text                 -- ^ Consul key
-                 ,csFilter :: Request -> Bool     -- ^ Filter for proxy put
-                 ,csLimit :: Maybe Int            -- ^ Optional request body size limit
-                 ,csCallback :: KeyValue -> IO () -- ^ Callback when data changes
+  ConsulSettings {csHost :: T.Text
+                            -- ^ Consul host address
+                 ,csPort :: PortNumber
+                            -- ^ Consul host port
+                 ,csKey :: T.Text
+                           -- ^ Consul key
+                 ,csFilter :: Request -> Bool
+                              -- ^ Filter for proxy put
+                 ,csLimit :: Maybe Int
+                             -- ^ Optional request body size limit
+                 ,csCallback :: (MonadBaseControl IO m,MonadLoggerIO m) => KeyValue -> m ()
+                                -- ^ Callback when data changes
                  }
 
 -- | Creates a complete Consul middleware for the cluster.
@@ -89,11 +101,23 @@ data ConsulSettings =
 -- updates) & mkConsulProxy (proxys data from the internet to Consul)
 -- into one common-use function. This will probably be the function
 -- you want.  See the example/ application for more insight.
-withConsul :: forall b.
-              ConsulSettings -> (Middleware -> IO b) -> IO ()
+withConsul :: (Monad m,MonadBaseControl IO m,MonadLoggerIO m)
+           => ConsulSettings -> (Middleware -> m a) -> m (Either () a)
 withConsul cs f =
-  race_ (mkConsulWatch cs)
-        (mkConsulProxy cs >>= f)
+  liftRace (mkConsulWatch cs)
+           (mkConsulProxy cs >>= f)
+
+liftRace :: MonadBaseControl IO m
+     => m a -> m b -> m (Either a b)
+liftRace x y =
+  do res <-
+       liftBaseWith
+         (\run ->
+            race (run x)
+                 (run y))
+     case res of
+       Left x' -> Left <$> restoreM x'
+       Right y' -> Right <$> restoreM y'
 
 -- | Creates a background process to receive notifications.
 -- Notifications happen via blocking HTTP request. (The HTTP client
@@ -106,16 +130,16 @@ withConsul cs f =
 -- problem with the request/response cycle or an exception in the
 -- supplied callback function, we just re-make the rquest & wait
 -- patiently for changes again.
-mkConsulWatch :: ConsulSettings -> IO ()
+mkConsulWatch :: (MonadBaseControl IO m,MonadLoggerIO m)
+              => ConsulSettings -> m ()
 mkConsulWatch cs =
-  do cc <-
-       initializeConsulClient
-         (csHost cs)
-         (csPort cs)
-         (Just $
-          defaultManagerSettings {managerResponseTimeout = Nothing})
-     go cc 0
-  where go cc idx' =
+  go 0 =<<
+  initializeConsulClient
+    (csHost cs)
+    (csPort cs)
+    (Just $
+     defaultManagerSettings {managerResponseTimeout = Nothing})
+  where go idx' cc =
           catchAny (do kv <-
                          getKey cc
                                 (csKey cs <> "?index=" <>
@@ -124,13 +148,13 @@ mkConsulWatch cs =
                                 Nothing
                        case kv of
                          Nothing ->
-                           do threadDelay $ 1000 * 1000
-                              go cc idx'
+                           do liftIO (threadDelay $ 1000 * 1000)
+                              go idx' cc
                          (Just kv') ->
-                           do (csCallback cs) kv'
-                              go cc (kvModifyIndex kv'))
+                           do (csCallback cs $ kv')
+                              go (kvModifyIndex kv') cc)
                    (\ex ->
-                      (log $ T.pack $ show ex))
+                      $(logWarn) (T.pack $ show ex))
 
 -- | Create WAI middleware that can be used to proxy incoming data
 -- into Consul (one-way). This function initiates our consul client
@@ -139,15 +163,15 @@ mkConsulWatch cs =
 -- there is a match it will create a make the key value put call for
 -- Consul using the incoming request body as the data for the Consul
 -- K/V.
-mkConsulProxy :: ConsulSettings -> IO Middleware
+mkConsulProxy :: (MonadIO m,Functor m)
+              => ConsulSettings -> m Middleware
 mkConsulProxy cs =
-  do defaultCC <-
-       initializeConsulClient (csHost cs)
-                              (csPort cs)
-                              Nothing
-     return (proxyToConsul defaultCC)
+  proxyToConsul <$>
+  initializeConsulClient (csHost cs)
+                         (csPort cs)
+                         Nothing
   where proxyToConsul cc app' req respond
-          | (csFilter cs $ req) =
+          | csFilter cs req =
             do bs <-
                  liftIO (runResourceT $
                          sourceRequestBody req $$

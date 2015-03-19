@@ -52,6 +52,7 @@ module Network.Wai.Middleware.Consul.GitHub
        where
 
 import BasePrelude
+import Control.Monad.IO.Class ( liftIO )
 import qualified Data.ByteString as B ( isPrefixOf )
 import Network.HTTP.Types ( methodPost, hUserAgent )
 import Network.Socket ( PortNumber(PortNum) )
@@ -71,8 +72,8 @@ gitHubPullOnWebhook =
                  ,csLimit = Nothing
                  ,csCallback =
                     \_ ->
-                      callProcess "git"
-                                  ["pull"]}
+                      liftIO (callProcess "git"
+                                          ["pull"])}
 
 isGitHubWebhook :: Request -> Bool
 isGitHubWebhook req =

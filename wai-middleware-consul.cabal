@@ -31,7 +31,8 @@ library
                      , enclosed-exceptions
                      , http-client
                      , http-types
-                     , logging
+                     , monad-control
+                     , monad-logger
                      , network
                      , process
                      , resourcet
@@ -48,10 +49,10 @@ executable wai-middleware-consul-example
   build-depends:       base >=4.7
                      , async
                      , base-prelude
-                     , logging
+                     , monad-logger
+                     , transformers
                      , wai
                      , wai-app-static
                      , wai-extra
-                     , wai-logger
                      , wai-middleware-consul
                      , warp
