@@ -164,6 +164,5 @@ mkConsulProxy cs =
                _workedOK <-
                  putKey cc keyValuePut Nothing
                -- TODO respond negatively if Consul 'put' didn't work
-               respond $
-                 responseLBS status201 [] ""
+               respond (responseBuilder status201 [] "")
           | otherwise = app' req respond
