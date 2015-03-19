@@ -53,7 +53,11 @@ module Network.Wai.Middleware.Consul
 import BasePrelude
 import Control.Concurrent.Async ( race )
 import Control.Exception.Enclosed ( catchAny )
+import Control.Monad.IO.Class ( liftIO )
+import Control.Monad.Trans.Resource ( runResourceT )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
+import Data.Conduit ( ($$) )
+import qualified Data.Conduit.Binary as C ( take )
 import qualified Data.Text as T ( Text, pack )
 import Network.Consul
     ( KeyValue(..),
@@ -65,8 +69,8 @@ import Network.HTTP.Client
     ( defaultManagerSettings, managerResponseTimeout )
 import Network.HTTP.Types ( status201 )
 import Network.Socket ( PortNumber )
-import Network.Wai
-    ( Middleware, Request, responseLBS, strictRequestBody )
+import Network.Wai ( Middleware, Request, responseLBS )
+import Network.Wai.Conduit ( sourceRequestBody )
 import System.IO ( hPutStr, stderr )
 
 -- | Consul Settings for watching & proxying Consul data
@@ -75,6 +79,7 @@ data ConsulSettings =
                  ,csPort :: PortNumber            -- ^ Consul host port
                  ,csKey :: T.Text                 -- ^ Consul key
                  ,csFilter :: Request -> Bool     -- ^ Filter for proxy put
+                 ,csLimit :: Maybe Int            -- ^ Optional request body size limit
                  ,csCallback :: KeyValue -> IO () -- ^ Callback when data changes
                  }
 
@@ -147,7 +152,10 @@ mkConsulProxy cs =
      return (proxyToConsul defaultCC)
   where proxyToConsul cc app' req respond
           | (csFilter cs $ req) =
-            do bs <- strictRequestBody req
+            do bs <-
+                 liftIO (runResourceT $
+                         sourceRequestBody req $$
+                         C.take (fromMaybe 5242880 (csLimit cs)))
                let keyValuePut =
                      KeyValuePut {kvpKey = csKey cs
                                  ,kvpValue = LB.toStrict bs

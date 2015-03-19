@@ -25,14 +25,19 @@ library
                      , async
                      , base-prelude
                      , bytestring
+                     , conduit
+                     , conduit-extra
                      , consul-haskell
                      , enclosed-exceptions
                      , http-client
                      , http-types
                      , network
                      , process
+                     , resourcet
+                     , transformers
                      , text
                      , wai
+                     , wai-conduit
 
 executable wai-middleware-consul-example
   default-language:    Haskell2010
