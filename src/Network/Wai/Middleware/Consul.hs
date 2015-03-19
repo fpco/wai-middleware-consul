@@ -17,9 +17,9 @@ also react to changes to K/V data coming from Consul.
 
 @
       ┌─────────┐      ┌─────────┐
-      │ Github  │      │         │
-      │  Repo   │─────▶│ AWS ELB │
-      │ Webhook │      │         │
+      │  JSON   │      │  LOAD   │
+      │  HTTP   │─────▶│ BALANCR │
+      │  POST   │      │         │
       └─────────┘      └─────────┘
                             │
         ┌────────────┬──────┘─ ─ ─
