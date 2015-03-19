@@ -68,6 +68,7 @@ gitHubPullOnWebhook =
                  ,csPort = PortNum 8500
                  ,csKey = "github"
                  ,csFilter = isGitHubWebhook
+                 ,csLimit = Nothing
                  ,csCallback =
                     \_ ->
                       callProcess "git"
