@@ -21,8 +21,8 @@ library
   hs-source-dirs:      src
   exposed-modules:     Network.Wai.Middleware.Consul
                      , Network.Wai.Middleware.Consul.GitHub
-  build-depends:       base >=4.7
-                     , async
+  build-depends:       async
+                     , base >=4.7
                      , base-prelude
                      , bytestring
                      , conduit
@@ -39,7 +39,6 @@ library
                      , resourcet
                      , text
                      , transformers
-                     , void
                      , wai
                      , wai-conduit
 
@@ -47,8 +46,8 @@ executable wai-middleware-consul-example
   default-language:    Haskell2010
   hs-source-dirs:      example
   main-is:             Main.hs
-  build-depends:       base >=4.7
-                     , async
+  build-depends:       async
+                     , base >=4.7
                      , base-prelude
                      , monad-logger
                      , transformers
