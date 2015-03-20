@@ -49,10 +49,8 @@ also react to changes to K/V data coming from Consul.
 -}
 
 module Network.Wai.Middleware.Consul
-       (ConsulSettings(..),
-        withConsul,
-        mkConsulWatch,
-        mkConsulProxy)
+       (ConsulSettings(..), defaultConsulSettings, withConsul,
+        mkConsulWatch, mkConsulProxy)
        where
 
 import BasePrelude
@@ -66,6 +64,7 @@ import Control.Monad.Trans.Resource ( runResourceT )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import Data.Conduit ( ($$) )
 import qualified Data.Conduit.Binary as C ( take )
+import Data.Default ( Default, def )
 import qualified Data.Text as T ( Text, pack )
 import Network.Consul
     ( KeyValue(kvModifyIndex),
@@ -75,9 +74,10 @@ import Network.Consul
       getKey )
 import Network.HTTP.Client
     ( defaultManagerSettings, managerResponseTimeout )
-import Network.HTTP.Types ( status201 )
-import Network.Socket ( PortNumber )
-import Network.Wai ( Middleware, Request, responseBuilder )
+import Network.HTTP.Types ( status201, methodPost )
+import Network.Socket ( PortNumber(PortNum) )
+import Network.Wai
+       (Middleware, Request, responseBuilder, pathInfo, requestMethod)
 import Network.Wai.Conduit ( sourceRequestBody )
 
 -- | Consul Settings for watching & proxying Consul data
@@ -95,6 +95,22 @@ data ConsulSettings =
                  ,csCallback :: (MonadBaseControl IO m,MonadLoggerIO m) => KeyValue -> m ()
                                 -- ^ Callback when data changes
                  }
+
+defaultConsulSettings :: ConsulSettings
+defaultConsulSettings = def
+
+instance Default ConsulSettings where
+  def =
+    ConsulSettings {csHost = "0.0.0.0"
+                   ,csPort = PortNum 8500
+                   ,csKey = "wai"
+                   ,csFilter =
+                      (\req ->
+                         (requestMethod req == methodPost) &&
+                         (pathInfo req ==
+                          ["wai"]))
+                   ,csLimit = Nothing
+                   ,csCallback = liftIO . print}
 
 -- | Creates a complete Consul middleware for the cluster.
 -- Combines mkConsulWatch async function (watches Consul data for

@@ -55,25 +55,21 @@ import BasePrelude
 import Control.Monad.IO.Class ( liftIO )
 import qualified Data.ByteString as B ( isPrefixOf )
 import Network.HTTP.Types ( methodPost, hUserAgent )
-import Network.Socket ( PortNumber(PortNum) )
 import Network.Wai
     ( Request(pathInfo, requestHeaders, requestMethod) )
-import Network.Wai.Middleware.Consul ( ConsulSettings(..) )
+import Network.Wai.Middleware.Consul ( ConsulSettings(..), defaultConsulSettings )
 import System.Process ( callProcess )
 
 -- | GitHub Webhook handler with Consul callback that does a `git pull`
 -- when fired.
 gitHubPullOnWebhook :: ConsulSettings
 gitHubPullOnWebhook =
-  ConsulSettings {csHost = "0.0.0.0"
-                 ,csPort = PortNum 8500
-                 ,csKey = "github"
-                 ,csFilter = isGitHubWebhook
-                 ,csLimit = Nothing
-                 ,csCallback =
-                    \_ ->
-                      liftIO (callProcess "git"
-                                          ["pull"])}
+  defaultConsulSettings {csKey = "github"
+                        ,csFilter = isGitHubWebhook
+                        ,csCallback =
+                           \_ ->
+                             liftIO (callProcess "git"
+                                                 ["pull"])}
 
 isGitHubWebhook :: Request -> Bool
 isGitHubWebhook req =
