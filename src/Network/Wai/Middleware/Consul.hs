@@ -218,7 +218,9 @@ mkConsulWatch cs =
                            do (csCallback cs $ kv')
                               go (kvModifyIndex kv') cc)
                    (\ex ->
-                      $(logWarn) (T.pack $ show ex))
+                      do liftIO (threadDelay $ 1000 * 1000)
+                         $(logWarn) (T.pack $ show ex)
+                         go idx' cc)
 
 -- | Create WAI middleware that can be used to proxy incoming data
 -- into Consul (one-way). This function initiates our consul client
