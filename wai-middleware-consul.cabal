@@ -38,6 +38,7 @@ library
                      , resourcet
                      , text
                      , transformers
+                     , void
                      , wai
                      , wai-conduit
 

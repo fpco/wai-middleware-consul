@@ -78,6 +78,7 @@ import Control.Monad.Trans.Control
 import Control.Monad.Trans.Resource ( runResourceT )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import Data.Conduit ( ($$) )
+import Data.Void ( Void(..), absurd )
 import qualified Data.Conduit.Binary as C ( take )
 import Data.Text ( Text )
 import qualified Data.Text as T ( pack )
@@ -163,13 +164,14 @@ getConsulCallback = csCallback
 -- into one common-use function. This will probably be the function
 -- you want.  See the example/ application for more insight.
 withConsul :: (Monad m,MonadBaseControl IO m,MonadLoggerIO m)
-           => ConsulSettings -> (Middleware -> m a) -> m (Either () a)
+           => ConsulSettings -> (Middleware -> m a) -> m a
 withConsul cs f =
-  liftRace (mkConsulWatch cs)
-           (mkConsulProxy cs >>= f)
+  fmap (either absurd id)
+       (liftRace (mkConsulWatch cs)
+                 (mkConsulProxy cs >>= f))
 
 liftRace :: MonadBaseControl IO m
-     => m a -> m b -> m (Either a b)
+         => m a -> m b -> m (Either a b)
 liftRace x y =
   do res <-
        liftBaseWith
@@ -192,14 +194,15 @@ liftRace x y =
 -- supplied callback function, we just re-make the rquest & wait
 -- patiently for changes again.
 mkConsulWatch :: (MonadBaseControl IO m,MonadLoggerIO m)
-              => ConsulSettings -> m ()
+              => ConsulSettings -> m Void
 mkConsulWatch cs =
-  go 0 =<<
-  initializeConsulClient
-    (csHost cs)
-    (csPort cs)
-    (Just $
-     defaultManagerSettings {managerResponseTimeout = Nothing})
+  (initializeConsulClient
+     (csHost cs)
+     (csPort cs)
+     (Just $
+      defaultManagerSettings {managerResponseTimeout = Nothing})) >>=
+  go 0 >>=
+  pure . absurd -- this function shouldn't exit under normal circumstances
   where go idx' cc =
           catchAny (do kv <-
                          getKey cc
