@@ -52,12 +52,18 @@ module Network.Wai.Middleware.Consul.GitHub
        where
 
 import BasePrelude
+
 import Control.Monad.IO.Class ( liftIO )
 import qualified Data.ByteString as B ( isPrefixOf )
 import Network.HTTP.Types ( methodPost, hUserAgent )
 import Network.Wai
     ( Request(pathInfo, requestHeaders, requestMethod) )
 import Network.Wai.Middleware.Consul
+    ( ConsulSettings,
+      defaultConsulSettings,
+      setConsulKey,
+      setConsulFilter,
+      setConsulCallback )
 import System.Process ( callProcess )
 
 -- | GitHub Webhook handler with Consul callback that does a `git pull`

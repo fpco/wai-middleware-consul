@@ -92,7 +92,7 @@ import Network.HTTP.Client
 import Network.HTTP.Types ( status201, methodPost )
 import Network.Socket ( PortNumber(PortNum) )
 import Network.Wai
-       (Middleware, Request, responseBuilder, pathInfo, requestMethod)
+    ( Middleware, Request, responseBuilder, pathInfo, requestMethod )
 import Network.Wai.Conduit ( sourceRequestBody )
 
 -- | Consul Settings for watching & proxying Consul data
