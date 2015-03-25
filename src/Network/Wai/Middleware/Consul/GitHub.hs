@@ -57,19 +57,19 @@ import qualified Data.ByteString as B ( isPrefixOf )
 import Network.HTTP.Types ( methodPost, hUserAgent )
 import Network.Wai
     ( Request(pathInfo, requestHeaders, requestMethod) )
-import Network.Wai.Middleware.Consul ( ConsulSettings(..), defaultConsulSettings )
+import Network.Wai.Middleware.Consul
 import System.Process ( callProcess )
 
 -- | GitHub Webhook handler with Consul callback that does a `git pull`
 -- when fired.
 gitHubPullOnWebhook :: ConsulSettings
 gitHubPullOnWebhook =
-  defaultConsulSettings {csKey = "github"
-                        ,csFilter = isGitHubWebhook
-                        ,csCallback =
-                           \_ ->
-                             liftIO (callProcess "git"
-                                                 ["pull"])}
+  (setConsulKey "github" .
+   setConsulFilter isGitHubWebhook .
+   setConsulCallback
+     (\_ ->
+        liftIO (callProcess "git"
+                            ["pull"]))) defaultConsulSettings
 
 isGitHubWebhook :: Request -> Bool
 isGitHubWebhook req =

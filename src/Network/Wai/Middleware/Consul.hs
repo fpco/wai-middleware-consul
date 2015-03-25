@@ -49,9 +49,24 @@ also react to changes to K/V data coming from Consul.
 -}
 
 module Network.Wai.Middleware.Consul
-       (ConsulSettings(..), defaultConsulSettings, withConsul,
-        mkConsulWatch, mkConsulProxy)
-       where
+       ( ConsulSettings
+       , defaultConsulSettings
+       , getConsulCallback
+       , getConsulFilter
+       , getConsulHost
+       , getConsulKey
+       , getConsulLimit
+       , getConsulPort
+       , mkConsulProxy
+       , mkConsulWatch
+       , setConsulCallback
+       , setConsulFilter
+       , setConsulHost
+       , setConsulKey
+       , setConsulLimit
+       , setConsulPort
+       , withConsul
+       ) where
 
 import BasePrelude
 import Control.Concurrent.Async ( race )
@@ -64,7 +79,8 @@ import Control.Monad.Trans.Resource ( runResourceT )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import Data.Conduit ( ($$) )
 import qualified Data.Conduit.Binary as C ( take )
-import qualified Data.Text as T ( Text, pack )
+import Data.Text ( Text )
+import qualified Data.Text as T ( pack )
 import Network.Consul
     ( KeyValue(kvModifyIndex),
       KeyValuePut(KeyValuePut, kvpCasIndex, kvpFlags, kvpKey, kvpValue),
@@ -81,19 +97,16 @@ import Network.Wai.Conduit ( sourceRequestBody )
 
 -- | Consul Settings for watching & proxying Consul data
 data ConsulSettings =
-  ConsulSettings {csHost :: T.Text
-                            -- ^ Consul host address
-                 ,csPort :: PortNumber
-                            -- ^ Consul host port
-                 ,csKey :: T.Text
-                           -- ^ Consul key
-                 ,csFilter :: Request -> Bool
-                              -- ^ Filter for proxy put
-                 ,csLimit :: Maybe Int
-                             -- ^ Optional request body size limit
-                 ,csCallback :: (MonadBaseControl IO m,MonadLoggerIO m) => KeyValue -> m ()
-                                -- ^ Callback when data changes
+  ConsulSettings {csHost :: Text -- ^ Consul host address
+                 ,csPort :: PortNumber -- ^ Consul host port
+                 ,csKey :: Text -- ^ Consul key
+                 ,csFilter :: Request -> Bool -- ^ Filter for proxy put
+                 ,csLimit :: Maybe Int -- ^ Optional request body size limit
+                 ,csCallback :: ConsulCallback -- ^ Callback when data changes
                  }
+
+type ConsulCallback = forall (m :: * -> *).
+  (MonadBaseControl IO m,MonadLoggerIO m) => KeyValue -> m ()
 
 defaultConsulSettings :: ConsulSettings
 defaultConsulSettings =
@@ -107,6 +120,42 @@ defaultConsulSettings =
                         ["wai"]))
                  ,csLimit = Nothing
                  ,csCallback = liftIO . print}
+
+setConsulHost :: Text -> ConsulSettings -> ConsulSettings
+setConsulHost a b = b { csHost = a }
+
+getConsulHost :: ConsulSettings -> Text
+getConsulHost = csHost
+
+setConsulPort :: PortNumber -> ConsulSettings -> ConsulSettings
+setConsulPort a b = b { csPort = a }
+
+getConsulPort :: ConsulSettings -> PortNumber
+getConsulPort = csPort
+
+setConsulKey :: Text -> ConsulSettings -> ConsulSettings
+setConsulKey a b = b { csKey = a }
+
+getConsulKey :: ConsulSettings -> Text
+getConsulKey = csKey
+
+setConsulFilter :: (Request -> Bool) -> ConsulSettings -> ConsulSettings
+setConsulFilter a b = b { csFilter = a }
+
+getConsulFilter :: ConsulSettings -> Request -> Bool
+getConsulFilter = csFilter
+
+setConsulLimit :: Maybe Int -> ConsulSettings -> ConsulSettings
+setConsulLimit a b = b { csLimit = a }
+
+getConsulLimit :: ConsulSettings -> Maybe Int
+getConsulLimit = csLimit
+
+setConsulCallback :: ConsulCallback -> ConsulSettings -> ConsulSettings
+setConsulCallback a b = b { csCallback = a }
+
+getConsulCallback :: ConsulSettings -> ConsulCallback
+getConsulCallback = csCallback
 
 -- | Creates a complete Consul middleware for the cluster.
 -- Combines mkConsulWatch async function (watches Consul data for
