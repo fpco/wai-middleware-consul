@@ -64,7 +64,6 @@ import Control.Monad.Trans.Resource ( runResourceT )
 import qualified Data.ByteString.Lazy as LB ( toStrict )
 import Data.Conduit ( ($$) )
 import qualified Data.Conduit.Binary as C ( take )
-import Data.Default ( Default, def )
 import qualified Data.Text as T ( Text, pack )
 import Network.Consul
     ( KeyValue(kvModifyIndex),
@@ -97,20 +96,17 @@ data ConsulSettings =
                  }
 
 defaultConsulSettings :: ConsulSettings
-defaultConsulSettings = def
-
-instance Default ConsulSettings where
-  def =
-    ConsulSettings {csHost = "0.0.0.0"
-                   ,csPort = PortNum 8500
-                   ,csKey = "wai"
-                   ,csFilter =
-                      (\req ->
-                         (requestMethod req == methodPost) &&
-                         (pathInfo req ==
-                          ["wai"]))
-                   ,csLimit = Nothing
-                   ,csCallback = liftIO . print}
+defaultConsulSettings =
+  ConsulSettings {csHost = "0.0.0.0"
+                 ,csPort = PortNum 8500
+                 ,csKey = "wai"
+                 ,csFilter =
+                    (\req ->
+                       (requestMethod req == methodPost) &&
+                       (pathInfo req ==
+                        ["wai"]))
+                 ,csLimit = Nothing
+                 ,csCallback = liftIO . print}
 
 -- | Creates a complete Consul middleware for the cluster.
 -- Combines mkConsulWatch async function (watches Consul data for

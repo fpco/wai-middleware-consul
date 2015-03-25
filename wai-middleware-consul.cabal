@@ -28,7 +28,6 @@ library
                      , conduit
                      , conduit-extra
                      , consul-haskell
-                     , data-default
                      , enclosed-exceptions
                      , http-client
                      , http-types
