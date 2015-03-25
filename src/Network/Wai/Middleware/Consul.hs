@@ -196,18 +196,16 @@ liftRace x y =
 mkConsulWatch :: (MonadBaseControl IO m,MonadLoggerIO m)
               => ConsulSettings -> m Void
 mkConsulWatch cs =
-  (initializeConsulClient
-     (csHost cs)
-     (csPort cs)
-     (Just $
-      defaultManagerSettings {managerResponseTimeout = Nothing})) >>=
+  initializeConsulClient (csHost cs)
+                         (csPort cs)
+                         Nothing >>=
   go 0 >>=
   pure . absurd -- this function shouldn't exit under normal circumstances
   where go idx' cc =
           catchAny (do kv <-
                          getKey cc
-                                (csKey cs <> "?index=" <>
-                                 T.pack (show idx'))
+                                (csKey cs)
+                                (Just idx')
                                 Nothing
                                 Nothing
                        case kv of
