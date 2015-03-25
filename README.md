@@ -29,10 +29,20 @@ doing a git pull on all webservers to update content.  The
        │         │  │         │  │         │
        └─────────┘  └─────────┘  └─────────┘
 
+# Install
+
+    cabal install wai-middleware-consul
+
+Or if you want to play with the example github webhook web-app:
+
+    cabal install -fexample wai-middleware-consul
+
+# Example
+
 You'll need to launch a small Consul cluster to try the example app.
 It's easy to do with Docker.  Please use the following steps:
 
-# Launch 4 containers of Docker w/ Consul running on each
+## Launch 4 containers of Docker w/ Consul running on each
 
     docker run -d --name node1 -h node1 progrium/consul -server -bootstrap-expect 3
     sleep 10
@@ -42,23 +52,23 @@ It's easy to do with Docker.  Please use the following steps:
     docker run -d -p 8400:8400 -p 8500:8500 -p 8600:53/udp --name node4 -h node4 progrium/consul -join $JOIN_IP
     sleep 10
 
-## Try out all the interfaces of Consul
+### Try out all the interfaces of Consul
 
-### Browse the [Web UI Interface](http://localhost:8500/ui/#/dc1/services/consul)
+1.  Browse the [Web UI Interface](http://localhost:8500/ui/#/dc1/services/consul)
 
-### Query Consul at the command line
+2.  Query Consul at the command line
 
-    consul members
+        consul members
 
-### Query the HTTP Interface
+3.  Query the HTTP Interface
 
-    curl 0.0.0.0:8500/v1/catalog/nodes
+        curl 0.0.0.0:8500/v1/catalog/nodes
 
-### Query the DNS Interface
+4.  Query the DNS Interface
 
-    dig @0.0.0.0 -p 8600 node1.node.consul
+        dig @0.0.0.0 -p 8600 node1.node.consul
 
-# Setting up a Github Webhook
+## Setting up a Github Webhook
 
 First we start \`ngrok\` to proxy HTTP requests from the Internet to
 our local machine (most likely behind a firewall).  Then we'll start
@@ -91,7 +101,7 @@ listening to events from Consul & this will fire also.  You should
 see it try to \`git pull\` the repository & you should see the changes
 if you refresh the home page of the example app.
 
-# Cleanup (kill & remove Consul containers)
+## Cleanup (kill & remove Consul containers)
 
     for n in $(seq 1 4); do
         docker kill node$n
