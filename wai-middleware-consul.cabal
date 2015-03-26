@@ -9,7 +9,7 @@ license-file:        LICENSE
 author:              Tim Dysinger
 maintainer:          tim@dysinger.net
 build-type:          Simple
-extra-source-files:  README.org
+extra-source-files:  README.md
 cabal-version:       >=1.10
 
 flag example
