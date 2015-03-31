@@ -1,7 +1,7 @@
 # WAI Consul Middleware
 
-![TravisCI](https://travis-ci.org/fpco/monad-logger-syslog.svg)
-![Hackage](https://img.shields.io/hackage/v/monad-logger-syslog.svg)
+![TravisCI](https://travis-ci.org/fpco/wai-middleware-consul.svg)
+![Hackage](https://img.shields.io/hackage/v/wai-middleware-consul.svg)
 
 This library assists you in monitoring Consul k/v data & with
 proxying data to Consul safely from the Internet.  The first use
