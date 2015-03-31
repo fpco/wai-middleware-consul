@@ -6,8 +6,8 @@ description:         Proxies data to/from Consul. Watches for updates.
 category:            Network
 license:             MIT
 license-file:        LICENSE
-author:              Tim Dysinger
-maintainer:          tim@dysinger.net
+author:              FP Complete Developers
+maintainer:          dev@fpcomplete.com
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
