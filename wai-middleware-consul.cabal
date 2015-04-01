@@ -1,5 +1,5 @@
 name:                wai-middleware-consul
-version:             0.1.0.0
+version:             0.1.0.1
 homepage:            https://github.com/fpco/wai-middleware-consul
 synopsis:            Wai Middleware for Consul
 description:         Proxies data to/from Consul. Watches for updates.
