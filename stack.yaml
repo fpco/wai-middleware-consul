@@ -1,0 +1,7 @@
+flags:
+  wai-middleware-consul:
+    example: false
+packages:
+- '.'
+extra-deps: []
+resolver: lts-2.12
